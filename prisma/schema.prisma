@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  password      String
+  role          String      @default("CITIZEN")
+  department    String?
+  created_at    DateTime    @default(now()) @map("created_at")
+  updated_at    DateTime    @default(now()) @map("updated_at")
+  complaints    Complaint[] @relation("UserComplaints")
+  responses     Response[]  @relation("OfficialResponses")
+  assignedComplaints Complaint[] @relation("AssignedComplaints")
+
+  @@map("users")
+}
+
+model Complaint {
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  status        String      @default("PENDING")
+  location      String?
+  attachment_url String?    @map("attachment_url")
+  created_at    DateTime    @default(now()) @map("created_at")
+  updated_at    DateTime    @default(now()) @map("updated_at")
+  user_id       String      @map("user_id")
+  user          User        @relation("UserComplaints", fields: [user_id], references: [id])
+  assigned_to   String?     @map("assigned_to")
+  assignedTo    User?       @relation("AssignedComplaints", fields: [assigned_to], references: [id])
+  responses     Response[]
+
+  @@map("complaints")
+}
+
+model Response {
+  id            String      @id @default(cuid())
+  content       String
+  created_at    DateTime    @default(now()) @map("created_at")
+  complaint_id  String      @map("complaint_id")
+  complaint     Complaint   @relation(fields: [complaint_id], references: [id])
+  official_id   String      @map("official_id")
+  official      User        @relation("OfficialResponses", fields: [official_id], references: [id])
+
+  @@map("responses")
+}
